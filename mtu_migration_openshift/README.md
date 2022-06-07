@@ -9,6 +9,6 @@
  
  - Migration takes approximately 20-30 minutes.
  
- - We copy the exisiting Network Manager Profiles from master and worker node which serves as the templates we use and we modify its connection.id, set autoconnect priority and remove uuid.
+ - We copy the exisiting Network Manager Profiles from master and worker node which serves as the templates we use and we modify its connection.id, set autoconnect priority < 100 and remove uuid.
    
  - In .bu files we need to make sure path is different than what we get under original master/worker profiles and local should point to our local nmconnection templates.
