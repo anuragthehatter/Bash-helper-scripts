@@ -1,0 +1,12 @@
+variant: openshift
+version: 4.10.0
+metadata:
+  name: 01-control-plane-interface
+  labels:
+    machineconfiguration.openshift.io/role: master
+storage:
+  files:
+    - path: /etc/NetworkManager/system-connections/ovs-if-test
+      contents:
+        local: config_master.nmconnection 
+      mode: 0644

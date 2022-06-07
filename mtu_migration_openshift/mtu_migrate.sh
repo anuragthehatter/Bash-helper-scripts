@@ -1,0 +1,94 @@
+#!/bin/bash
+# $1 arguement expects desired_cluster_network_MTU you want to migrate to
+# your local env expects coreos/butane utility to be downloaded from curl https://mirror.openshift.com/pub/openshift-v4/clients/butane/latest/butane --output butane
+desired_cluster_nw_mtu=$(($1))
+
+function wait_mcp_co {
+	oc wait mcp --all --for=condition=UPDATED=True --timeout=900s
+	oc wait co --all --for=condition=PROGRESSING=false --timeout=900s
+	oc wait co --all --for=condition=AVAILABLE=true --timeout=900s
+	oc wait co --all --for=condition=DEGRADED=false --timeout=900s
+}
+
+function pre_CNO_patch {
+
+	#Copy default NM templates from master and workers locally and modify them as per our requirements above
+	#Change MTU to desired_cluster_nw_MTU +100, reduce autoconnect-priority to less than 100 and change id name to something else like ovn-if-test
+	master=`oc get nodes -l node-role.kubernetes.io/master -o=jsonpath={.items[0].metadata.name}`
+	worker=`oc get nodes -l node-role.kubernetes.io/worker -o=jsonpath={.items[0].metadata.name}`
+	oc debug node/$master -- chroot /host cat /etc/NetworkManager/system-connections/ovs-if-phys0.nmconnection > config_master.nmconnection
+	oc debug node/$worker -- chroot /host cat /etc/NetworkManager/system-connections/ovs-if-phys0.nmconnection > config_worker.nmconnection
+
+	#Find current machine MTU
+	current_machine_mtu=`cat config_master.nmconnection | grep "mtu=" |sed 's/^mtu=//'`
+	echo "current machine MTU is $current_machine_mtu"
+
+	#Find current cluster MTU which is nothing but overlay_from_MTU
+	current_cluster_nw_mtu=$((`oc describe network.config.openshift.io | grep "Cluster Network MTU" | sed 's/^.*:  //'`))
+	echo "current cluster network MTU is $current_cluster_nw_mtu"
+	current_cluster_nw_mtu=$(($current_cluster_nw_mtu))
+
+	echo "And you want to migrate cluster network MTU to $desired_cluster_nw_mtu ?"
+	read -p "Do you want to proceed? (yes/no) " yn
+	case $yn in 
+		yes ) echo ok, we will proceed;;
+		no ) echo exiting...;
+			exit;;
+		* ) echo invalid response;
+			exit 1;;
+	esac
+
+	echo Proceeding....
+
+	#For OVN new machine mtu will be 100 bytes more than cluster_nw_mtu to acocomodate ovn headers
+	new_machine_mtu=$(($desired_cluster_nw_mtu+100))
+	echo "New Machine MTU is $new_machine_mtu"
+
+	#master nmconnection file changes
+	sed -i 's/autoconnect-priority=100/autoconnect-priority=99/g' config_master.nmconnection
+	sed -i 's/id=ovs-if-phys0/id=ovs-if-test/g' config_master.nmconnection
+	sed -i "s/mtu=.*/mtu=$new_machine_mtu/g" config_master.nmconnection
+	sed -i '/uuid/d' config_master.nmconnection
+
+	#worker nmconnection changes
+	sed -i 's/autoconnect-priority=100/autoconnect-priority=99/g' config_worker.nmconnection
+	sed -i 's/id=ovs-if-phys0/id=ovs-if-test/g' config_worker.nmconnection
+	sed -i "s/mtu=.*/mtu=$new_machine_mtu/g" config_worker.nmconnection
+	sed -i '/uuid/d' config_worker.nmconnection
+
+	#Generating machine config manifests from bu files to be used later
+	for manifest in control-plane-interface worker-interface; do butane --files-dir . $manifest.bu > $manifest.yaml; done
+
+	#Patching CNO
+	patch="oc patch Network.operator.openshift.io cluster --type=merge -p='{\"spec\":{\"migration\":{\"mtu\":{\"network\":{\"from\":$((current_cluster_nw_mtu)),\"to\":$((desired_cluster_nw_mtu))},\"machine\":{\"to\":$new_machine_mtu}}}}}'"
+	echo $patch
+	eval $patch
+}
+
+# If we lose the network connection post pre_CNO_patch we can call below function later after commenting "pre_CNO_patch" function call in main
+function post_CNO_patch {
+
+	#Wait MC and COto rollout properly
+	wait_mcp_co
+
+	#Generating new manifests based on 
+	for manifest in control-plane-interface worker-interface; do oc create -f $manifest.yaml;done
+
+	#Wait MC and CO to rollout properly
+	wait_mcp_co
+
+	#Patch CNO with desired_cluster_nw_mtu 
+	patch="oc patch Network.operator.openshift.io cluster --type=merge -p='{\"spec\":{\"migration\":null,\"defaultNetwork\":{\"ovnKubernetesConfig\":{\"mtu\":$desired_cluster_nw_mtu}}}}'"
+	echo $patch
+	eval $patch
+	
+	#Wait MC and CO to rollout properly
+	wait_mcp_co
+}
+
+pre_CNO_patch
+post_CNO_patch
+echo "Congratulations! MTU migration seems to be successful"
+#Remove nmconnection files and yamls
+rm -rf *.nmconnection
+rm -rf *.yaml
