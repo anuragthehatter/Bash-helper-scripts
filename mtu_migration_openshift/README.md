@@ -5,7 +5,7 @@
   For example
   ```./mtu_migrate.sh 1600```
   
- - You env supppsed to have butane utlity installed which can be downloaded from https://mirror.openshift.com/pub/openshift-v4/clients/butane/latest/butane. Butane utility consumes butane configs and producing ignition configs. Its only available as last GA release. We can use last GA binary to test on current release
+ - You env suppposed to have butane utlity installed which can be downloaded from https://mirror.openshift.com/pub/openshift-v4/clients/butane/latest/butane. Butane utility consumes butane configs and producing ignition configs. Its only available as last GA release. We can use last GA binary to test on current release
  
  - Migration takes approximately 20-30 minutes.
  
