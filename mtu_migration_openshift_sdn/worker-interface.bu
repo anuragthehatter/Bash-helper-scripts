@@ -1,0 +1,12 @@
+variant: openshift
+version: 4.10.0
+metadata:
+  name: 01-worker-interface
+  labels:
+    machineconfiguration.openshift.io/role: worker
+storage:
+  files:
+    - path: /etc/NetworkManager/system-connections/sdn-mtu-test.nmconnection
+      contents:
+        local: config.nmconnection 
+      mode: 0644
