@@ -1,7 +1,9 @@
 #!/bin/bash
 # $1 arguement expects desired_cluster_network_MTU you want to migrate to
+# $2 is optional for ipsec
 # your local env expects coreos/butane utility to be downloaded from curl https://mirror.openshift.com/pub/openshift-v4/clients/butane/latest/butane --output butane
 desired_cluster_nw_mtu=$(($1))
+ipsec=$2
 
 function wait_mcp_co {
 	oc wait mcp --all --for=condition=UPDATED=True --timeout=900s
@@ -12,10 +14,10 @@ function wait_mcp_co {
 
 function pre_CNO_patch {
 
-	#Copy default NM template from master/worker locally and modify them as per our requirements above
-	#Change MTU to desired_cluster_nw_MTU +100, reduce autoconnect-priority to less than 100 and change id name to something else like ovn-if-test
+        #Copy default NM template from master/worker locally and modify them as per our requirements above
+	#Change MTU to desired_cluster_nw_MTU +100 or 146 for ipsec, reduce autoconnect-priority to less than 100 and change id name to something else like ovn-if-test
 	master=`oc get nodes -l node-role.kubernetes.io/master -o=jsonpath={.items[0].metadata.name}`
-	oc debug node/$master -- chroot /host cat /etc/NetworkManager/system-connectons/ovs-if-phys0.nmconnection > config.nmconnection
+	oc debug node/$master -- chroot /host cat /etc/NetworkManager/system-connections/ovs-if-phys0.nmconnection > config.nmconnection
 
 	#Find current machine MTU
 	current_machine_mtu=`cat config.nmconnection | grep "mtu=" |sed 's/^mtu=//'`
@@ -38,10 +40,15 @@ function pre_CNO_patch {
 
 	echo Proceeding....
 
-	#For OVN new machine mtu will be 100 bytes more than cluster_nw_mtu to acocomodate ovn headers
-	new_machine_mtu=$(($desired_cluster_nw_mtu+100))
-	echo "New Machine MTU is $new_machine_mtu"
-
+	#For OVN IPsec new machine mtu will be 146 bytes more than cluster_nw_mtu to acocomodate ovn+46(for ipsec)  headers
+	if [[ $ipsec == "ipsec" ]] 
+        then 
+           new_machine_mtu=$(($desired_cluster_nw_mtu+146))
+	   echo "New IPsec Machine MTU is $new_machine_mtu"
+        else
+           new_machine_mtu=$(($desired_cluster_nw_mtu+100))
+	   echo "New Machine MTU is $new_machine_mtu"
+	fi
 	#nmconnection template file changes
 	sed -i 's/autoconnect-priority=100/autoconnect-priority=99/g' config.nmconnection
 	sed -i 's/id=ovs-if-phys0/id=ovs-if-test/g' config.nmconnection

@@ -8,5 +8,5 @@ storage:
   files:
     - path: /etc/NetworkManager/system-connections/ovs-if-test
       contents:
-        local: config_worker.nmconnection 
+        local: config.nmconnection 
       mode: 0644
