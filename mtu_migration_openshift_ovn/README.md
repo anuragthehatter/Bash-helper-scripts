@@ -1,6 +1,6 @@
 - This for OVNKubernetes
 
-- Script take only one argument which is the desired cluster network MTU we want to migrate
+- Script take only 3 arguments which is the desired cluster network MTU, and vpshere ans ipsec are optional
 
   For example
   ```./mtu_migrate.sh 1600```
