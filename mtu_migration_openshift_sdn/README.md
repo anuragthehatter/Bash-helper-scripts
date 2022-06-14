@@ -1,6 +1,6 @@
 - This for OpenShiftSDN
 
-- Script take only one argument which is the desired cluster network MTU we want to migrate
+- Script take only two arguments which is the desired cluster network MTU and vpshere arguement is optional
 
   For example
   ```./mtu_migrate.sh 1600```
