@@ -1,7 +1,9 @@
 #!/bin/bash
 # $1 arguement expects desired_cluster_network_MTU you want to migrate to
+# $2 is optional for vsphere
 # your local env expects coreos/butane utility to be downloaded from curl https://mirror.openshift.com/pub/openshift-v4/clients/butane/latest/butane --output butane
 desired_cluster_nw_mtu=$(($1))
+vsphere=$2
 
 function wait_mcp_co {
 	oc wait mcp --all --for=condition=UPDATED=True --timeout=900s
@@ -15,9 +17,15 @@ function pre_CNO_patch {
 	#Copy default NM templates from either master or worker locally and modify it as per our requirements above
 	#Change MTU to desired_cluster_nw_MTU +50, reduce autoconnect-priority to less than 100 and change id name to something else like sdn-if-test
 	master=`oc get nodes -l node-role.kubernetes.io/master -o=jsonpath={.items[0].metadata.name}`
-	connection_profile=`oc debug node/$master -- chroot /host nmcli -g UUID,FILENAME c show | sed 's:.*/::'`
-	oc debug node/$master -- chroot /host cat /run/NetworkManager/system-connections/"$connection_profile" > config.nmconnection
-
+ 	if [[ $vsphere == "vsphere" ]]
+        then
+           echo -e "Platform ${RED}is${NC} Vsphere"
+           oc debug node/$master -- chroot /host cat /etc/NetworkManager/system-connections/br-ex.nmconnection > config.nmconnection
+        else
+	   connection_profile=`oc debug node/$master -- chroot /host nmcli -g UUID,FILENAME c show | sed 's:.*/::'`
+	   oc debug node/$master -- chroot /host cat /run/NetworkManager/system-connections/"$connection_profile" > config.nmconnection
+        fi
+	
 	#Find current cluster MTU which is nothing but overlay_from_MTU
 	current_cluster_nw_mtu=$((`oc describe network.config.openshift.io | grep "Cluster Network MTU" | sed 's/^.*:  //'`))
 	echo "current cluster network MTU is $current_cluster_nw_mtu"
