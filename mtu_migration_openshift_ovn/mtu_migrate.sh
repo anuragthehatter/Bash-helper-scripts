@@ -9,10 +9,10 @@ ipsec=$3
 vsphere=$2
 
 function wait_mcp_co {
-	oc wait mcp --all --for=condition=UPDATED=True --timeout=900s
-	oc wait co --all --for=condition=PROGRESSING=false --timeout=900s
-	oc wait co --all --for=condition=AVAILABLE=true --timeout=900s
-	oc wait co --all --for=condition=DEGRADED=false --timeout=900s
+	oc wait mcp --all --for=condition=UPDATED=True --timeout=1500s
+	oc wait co --all --for=condition=PROGRESSING=false --timeout=1500s
+	oc wait co --all --for=condition=AVAILABLE=true --timeout=1500s
+	oc wait co --all --for=condition=DEGRADED=false --timeout=1500s
 }
 
 function pre_CNO_patch {
@@ -77,10 +77,10 @@ function pre_CNO_patch {
 # If we lose the network connection post pre_CNO_patch we can call below function later after commenting "pre_CNO_patch" function call in main
 function post_CNO_patch {
 
-	#Wait MC and COto rollout properly
+	#Wait MC and CO to rollout properly
 	wait_mcp_co
 
-	#Generating new manifests based on 
+	#Creating manifests 
 	for manifest in control-plane-interface worker-interface; do oc create -f $manifest.yaml;done
 
 	#Wait MC and CO to rollout properly
@@ -99,5 +99,6 @@ function post_CNO_patch {
 rm -rf *.nmconnection
 rm -rf *.yaml
 pre_CNO_patch
+sleep 150
 post_CNO_patch
 echo "Congratulations! MTU migration seems to be successful"
