@@ -6,7 +6,7 @@ metadata:
     machineconfiguration.openshift.io/role: master
 storage:
   files:
-    - path: /etc/NetworkManager/system-connections/ovs-if-test
+    - path: /etc/NetworkManager/system-connections/ovs-if-test.nmconnection
       contents:
         local: config.nmconnection 
       mode: 0644

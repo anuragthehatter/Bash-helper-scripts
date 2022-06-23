@@ -90,6 +90,8 @@ function post_CNO_patch {
 	patch="oc patch Network.operator.openshift.io cluster --type=merge -p='{\"spec\":{\"migration\":null,\"defaultNetwork\":{\"ovnKubernetesConfig\":{\"mtu\":$desired_cluster_nw_mtu}}}}'"
 	echo $patch
 	eval $patch
+        
+	sleep 180
 	
 	#Wait MC and CO to rollout properly
 	wait_mcp_co
@@ -99,6 +101,6 @@ function post_CNO_patch {
 rm -rf *.nmconnection
 rm -rf *.yaml
 pre_CNO_patch
-sleep 150
+sleep 180
 post_CNO_patch
 echo "Congratulations! MTU migration seems to be successful"
