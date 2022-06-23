@@ -95,9 +95,9 @@ function post_CNO_patch {
 	wait_mcp_co
 }
 
+#Remove nmconnection files and yamls first if there
+rm -rf *.nmconnection
+rm -rf *.yaml
 pre_CNO_patch
 post_CNO_patch
 echo "Congratulations! MTU migration seems to be successful"
-#Remove nmconnection files and yamls
-rm -rf *.nmconnection
-rm -rf *.yaml
