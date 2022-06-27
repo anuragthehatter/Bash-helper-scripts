@@ -3,8 +3,7 @@
 - Script take only two arguments which is the desired cluster network MTU and vpshere arguement is optional
 
   For example
-  ```./mtu_migrate.sh 1600```
-  ```./mtu_migrate.sh 1600 vsphere ```
+  ```./mtu_migrate.sh 1600``` or ```./mtu_migrate.sh 1600 vsphere ```
   
  - Your env suppposed to have butane utlity installed which can be downloaded from https://mirror.openshift.com/pub/openshift-v4/clients/butane/latest/butane. Butane utility consumes butane configs and produce ignition configs. Its only available as last GA release. We can use last GA binary to test on current release.```mv``` it under /usr/bin and chmod 777.
  
