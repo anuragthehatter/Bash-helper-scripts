@@ -1,4 +1,6 @@
 #Use recent image tag if needed https://quay.io/repository/cilium/cilium-bpftool?tab=tags
+#<bpftool map> will list all maps we need to find the one that uses lpm trie and note its id number
+#bpftool map dump id <number from prev command> this will dump the entries map
 kind: Pod
 apiVersion: v1
 metadata:
