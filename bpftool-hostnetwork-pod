@@ -1,4 +1,4 @@
----
+#Use recent image tag if needed https://quay.io/repository/cilium/cilium-bpftool?tab=tags
 kind: Pod
 apiVersion: v1
 metadata:
