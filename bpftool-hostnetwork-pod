@@ -1,0 +1,20 @@
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: hostnetwork-pod
+  labels:
+    name: hostnetwork-pod
+spec:
+  containers:
+  - name: hostnetwork-pod
+    command:
+    - "/bin/bash"
+    - "-c"
+    - trap 'kill $(jobs -p); exit 0' TERM ; sleep 2000000000000 & wait
+    image: quay.io/cilium/cilium-bpftool:d3093f6aeefef8270306011109be623a7e80ad1b
+    securityContext:
+      privileged: true
+  hostNetwork: true
+  hostPID: true
+  nodeName: <nodeName>
