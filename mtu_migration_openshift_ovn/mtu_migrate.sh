@@ -24,9 +24,9 @@ function pre_CNO_patch {
 	if [[ $vsphere == "vsphere" ]] 
         then 
 	   echo -e "Platform ${RED}is${NC} Vsphere"	   
-	   oc debug node/$master -- chroot /host cat /etc/NetworkManager/system-connections/br-ex.nmconnection > config.nmconnection
+	   oc debug node/$master -- chroot /host cat /run/NetworkManager/system-connections/br-ex.nmconnection > config.nmconnection
 	else
-	   oc debug node/$master -- chroot /host cat /etc/NetworkManager/system-connections/ovs-if-phys0.nmconnection > config.nmconnection
+	   oc debug node/$master -- chroot /host cat /run/NetworkManager/system-connections/ovs-if-phys0.nmconnection > config.nmconnection
 	fi
 
 	#Find current machine MTU
